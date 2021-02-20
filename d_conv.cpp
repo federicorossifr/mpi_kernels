@@ -16,22 +16,33 @@ void print_matrix(float* ptr,int rows, int cols) {
     }
 }
 //A[(i+k)*C + j + l ]*F[k*3+l]
-
+/*
+    a source matrix
+    f filter
+    N output rows
+    M output columns
+    F filter linear size
+    stripe_dim output size
+*/
 void local_conv(float* a,float* f,int N, int M, int F, int stripe_dim) {
         float* stripe_data = new float[stripe_dim];
-        for(int i = 0; i < N; ++i ) {
-            for(int j = 0; j < M; ++j) {
+        int Nf = N+F-1,Mf = M+F-1;
+
+        /*===== ACTUAL LOCAL CONV =======*/
+        for(int i = 0; i < Nf-F+1; ++i ) {
+            for(int j = 0; j < Mf-F+1; ++j) {
                 float accum = 0.f;
 
                 //F KERNEL APPLY
                 for(int k = 0; k < F;++k ) {
                     for(int l = 0; l < F; ++l) {
-                        accum+= a[(i+k)*(M+F-1)+j+l]*f[k*F+l];
+                        accum+= a[(i+k)*(Mf)+j+l]*f[k*F+l];
                     }
                 }
                 stripe_data[i*M+j] = accum;
             }
         }
+        /*===================================*/
 		MPI_Send(stripe_data,stripe_dim,MPI_FLOAT,0,201,MPI_COMM_WORLD);
 }
 
